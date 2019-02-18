@@ -42,7 +42,7 @@ class HMM:
 
                 # probability is probability it is that color/#color in maze
                 if maze_colors[(x, y)] == color:
-                    probability 0.88/self.num_colors[color]
+                    probability = 0.88/self.num_colors[color]
                     prob_matrix_sensor[y, x] *= probability
                 else:
                     probability = 0.04/self.num_colors[maze_colors[(x, y)]]
@@ -56,4 +56,8 @@ class HMM:
         pass
 
     def compute_distribution(self, reading, state):
+        pass
+
+    # returns a list of legal moves from a given square (tuple)
+    def get_moves(self, square):
         pass
