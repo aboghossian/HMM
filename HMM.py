@@ -73,7 +73,7 @@ class HMM:
                         probability = 0.88/self.num_colors[color]
                         prob_matrix_sensor[y, x] = probability
 
-                    # otherwise probability = 0.04 it is one of the three others
+                    # otherwise probability = 0.12 it is not that color
                     else:
                         probability = 0.04/self.num_colors[self.maze_colors[(x, y)]]
                         prob_matrix_sensor[y, x] = probability
@@ -83,6 +83,7 @@ class HMM:
     # transition model:
     # assuming a uniform probability of choosing any move, the chance of
     # moving to a given square is the number of ways to move to that square
+    # divided by the total number of moves
     # stays constant for the entire problem
     def compute_transition_model(self):
         moves_to = {}  # tracks number of moves to a given square
