@@ -11,7 +11,7 @@ class HMM:
         self.maze = maze  # maze that the robot is in
         self.sensor_readings = sensor_readings  # sensor readings from the robot
         self.maze_colors = maze_colors  # colors of each square of the maze
-        self.start_state = np.zeros((maze.width, maze.height)) # placeholder
+        self.start_state = self.get_start_state() # genrate initial distribution
 
         # builds a dictionary tracking how many of each color in the maze
         # for generating the probability of being in a square based on color
@@ -22,15 +22,28 @@ class HMM:
         for value in self.maze_colors.values():
             self.num_colors[value] += 1
 
-        # creates an array of probabilities (each location equal at start)
-        # NOTE: the array a mirror of the maze when printing use np.flipud
+        # transition model
+        self.transition_model = compute_transition_model()
+
+        # sensor models given color
+        self.red_model = self.get_sensor_model('r')
+        self.blue_model = self.get_sensor_model('b')
+        self.yellow_model = self.get_sensor_model('y')
+        self.green_model = self.get_sensor_model('g')
+
+    # creates an array of probabilities (each location equal at start)
+    # NOTE: the array a mirror of the maze when printing use np.flipud
+    def get_start_state(self):
+        start_state = np.zeros((maze.width, maze.height)) # placeholder
+
         for x in range(self.maze.width):
             for y in range(self.maze.height):
+
                 if self.maze.is_floor(x, y):
-                    self.start_state[y, x] = 1/len(maze_colors)
+                    start_state[y, x] = 1/len(maze_colors)
 
     # genrates a probability matrix for each square based on sensor model
-    def get_sensor_model(self, state, color):
+    def get_sensor_model(self, color):
         # sensor model:
         # if sensor reads a color then 0.88 chance the square is that colors
         # 0.04 chance of other color
@@ -47,6 +60,8 @@ class HMM:
                 else:
                     probability = 0.04/self.num_colors[maze_colors[(x, y)]]
                     prob_matrix_sensor[y, x] *= probability
+
+        return prob_matrix_sensor
 
     # transition model:
     # assuming a uniform probability of choosing any move, the chance of
