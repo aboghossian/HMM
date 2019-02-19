@@ -22,23 +22,47 @@ class HMM:
         for color in self.maze_colors.values():
             self.num_colors[color] += 1  # increment number of that color
 
-        # transition model (constant)
+        # transition model (constant 16x16 array)
         self.transition_model = self.compute_transition_model()
 
-        # sensor models given color (constant)
+        # sensor models given color (constant 4x4 array)
         self.red_model = self.get_sensor_model('r')  # red
         self.blue_model = self.get_sensor_model('b')  # blue
         self.yellow_model = self.get_sensor_model('y')  # yellow
         self.green_model = self.get_sensor_model('g')  # green
-        print(self.transition_model)
-        print('RED--------------')
-        print(self.red_model)
-        print('BLUE-------------')
-        print(self.blue_model)
-        print('GREEN------------')
-        print(self.green_model)
-        print('YELLOW-----------')
-        print(self.yellow_model)
+
+    # computes a sequence of probability distributions given a sequence of
+    # sensor readings (colors)
+    def compute_distributions(self):
+        state = self.start_state
+        sequence = [np.flipud(state)]
+        for color in self.sensor_readings:
+
+            # implement transition model (reshape to 1x16 for multiplication)
+            print(state)
+            state = np.reshape(state, (1, 16))
+            state = np.matmul(state, self.transition_model)
+
+            # reshape back to 4x4
+            state = np.reshape(state, (self.maze.width, self.maze.height))
+            print(state)
+            print('------loop-----')
+
+            # implement sensor model based on color
+            if color == 'r':
+                state *= self.red_model
+            if color == 'g':
+                state *= self.green_model
+            if color == 'b':
+                state *= self.blue_model
+            if color == 'y':
+                state *= self.yellow_model
+
+            # normalize and add flipped (to reflect maze orientation)
+            state = self.normalize(state)
+            sequence.append(np.flipud(state))
+
+        return sequence
 
     # creates an array of probabilities (each location equal at start)
     # NOTE: the array a mirror of the maze when printing use np.flipud
@@ -51,11 +75,13 @@ class HMM:
                 if self.maze.is_floor(x, y):
                     start_state[y, x] = 1/len(self.maze_colors)
 
+        return start_state
+
     # genrates a probability matrix for each square based on sensor model
     # sensor model:
     # if sensor reads a color then 0.88 chance the square is that color
     # 0.04 chance of other colors
-    # divide all of these possibilities by number of each square of a color
+    # divide all of these possibilities by number of each color
     def get_sensor_model(self, color):
 
         # placeholder, values will be updated
@@ -74,50 +100,41 @@ class HMM:
                         prob_matrix_sensor[y, x] = probability
 
                     # otherwise probability = 0.12 it is not that color
+                    # ****should this be broken down color by color?****
                     else:
-                        probability = 0.04/self.num_colors[self.maze_colors[(x, y)]]
+                        num_color = self.num_colors[self.maze_colors[(x, y)]]
+                        probability = 0.04/num_color
                         prob_matrix_sensor[y, x] = probability
 
         return prob_matrix_sensor
 
     # transition model:
-    # assuming a uniform probability of choosing any move, the chance of
-    # moving to a given square is the number of ways to move to that square
-    # divided by the total number of moves
-    # stays constant for the entire problem
+    # generates a 16x16 matrix describing probability of moving from any square
+    # to any other
     def compute_transition_model(self):
-        moves_to = {}  # tracks number of moves to a given square
-        total_moves = 0  # tracks the total number of possible moves
 
-        # loop through possible locations
-        for square in self.maze_colors:
+        # empty transition matrix
+        trans_matrix = np.zeros((16, 16))
 
-            # generate neighbors of those locations
-            neighbors = self.get_moves(square)
-            for neighbor in neighbors:
+        # loop through the maze
+        for y, column in enumerate(self.start_state):
+            for x, value in enumerate(column):
 
-                # add to dictionary or increment value if already in
-                if neighbor in moves_to:
-                    moves_to[neighbor] += 1
-                else:
-                    moves_to[neighbor] = 1
-                total_moves += 1  # increment total moves
+                # convert to what value would be in a 1x16 array
+                current = self.one_dimize((x, y))
 
-        # placeholder, values will be updated
-        prob_matrix_transition = np.zeros((self.maze.width, self.maze.height))
+                # get neighbors and track the total possible moves from square
+                moves = self.get_moves((x, y))
+                total_moves = len(moves)
 
-        # for each square probability of moving to it is number of moves to it
-        # divided by total possible moves (assumes moves are random)
-        for square in moves_to:
-            probability = moves_to[square]/total_moves
-            x, y = square
-            prob_matrix_transition[y, x] = probability
+                # for each move, incrememnt the probability in the matrix by
+                # 1/total (probability of making that move from that square)
+                for move in moves:
+                    next = self.one_dimize(move)
+                    trans_matrix[next, current] += 1/total_moves
 
-        return prob_matrix_transition
-
-
-    def compute_distribution(self, reading, state):
-        pass
+        # transpose for multiplication
+        return np.transpose(trans_matrix)
 
     # returns a list of legal moves from a given square (tuple)
     def get_moves(self, square):
@@ -142,3 +159,21 @@ class HMM:
                 neighbors.append(tuple(square))
 
         return neighbors
+
+    # convert from two-dimensional location to one-dimensional location
+    # for building transition model matrix
+    def one_dimize(self, square):
+
+        # y value x items in row + x value
+        return self.maze.width * square[1] + square[0]
+
+    # normalizes values of array
+    def normalize(self, state):
+
+        # sum
+        total = np.sum(state)
+
+        # divide each value by the sum
+        state = state / total
+
+        return state
