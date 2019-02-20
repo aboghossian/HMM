@@ -39,14 +39,11 @@ class HMM:
         for color in self.sensor_readings:
 
             # implement transition model (reshape to 1x16 for multiplication)
-            print(state)
             state = np.reshape(state, (1, 16))
             state = np.matmul(state, self.transition_model)
 
             # reshape back to 4x4
             state = np.reshape(state, (self.maze.width, self.maze.height))
-            print(state)
-            print('------loop-----')
 
             # implement sensor model based on color
             if color == 'r':
