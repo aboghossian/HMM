@@ -34,8 +34,11 @@ class HMM:
     # computes a sequence of probability distributions given a sequence of
     # sensor readings (colors)
     def compute_distributions(self):
+        # initialize
         state = self.start_state
-        sequence = [np.flipud(state)]
+        sequence = [np.flipud(state)]  # add start state to state sequence
+
+        # loop through readings
         for color in self.sensor_readings:
 
             # implement transition model (reshape to 1x16 for multiplication)
@@ -60,6 +63,74 @@ class HMM:
             sequence.append(np.flipud(state))
 
         return sequence
+
+    # implements forward-backward algorithm to compute probability distribution
+    def compute_distrib_smoothing(self):
+        # both are initialized to uniform distributions
+        forward_state = self.start_state
+        backward_state = self.start_state
+
+        # track the sequence starting at beginning and end
+        forward_sequence = [np.flipud(forward_state)]
+        backward_sequence = [np.flipud(backward_state)]
+
+        # loop forward through readings
+        for color in self.sensor_readings:
+
+            # implement transition model (reshape to 1x16 for multiplication)
+            forward_state = np.reshape(forward_state, (1, 16))
+            forward_state = np.matmul(forward_state, self.transition_model)
+
+            # reshape back to 4x4
+            forward_state = np.reshape(forward_state, (self.maze.width, self.maze.height))
+
+            # implement sensor model based on color
+            if color == 'r':
+                forward_state *= self.red_model
+            if color == 'g':
+                forward_state *= self.green_model
+            if color == 'b':
+                forward_state *= self.blue_model
+            if color == 'y':
+                forward_state *= self.yellow_model
+
+            forward_state = self.normalize(forward_state)
+            forward_sequence.append(np.flipud(forward_state))
+
+        # loop backward through readings
+        for color in self.sensor_readings[::-1]:
+
+            # implement transition model (reshape to 1x16 for multiplication)
+            backward_state = np.reshape(backward_state, (1, 16))
+            backward_state = np.matmul(backward_state, self.transition_model)
+
+            # reshape back to 4x4
+            backward_state = np.reshape(backward_state, (self.maze.width, self.maze.height))
+
+            # implement sensor model based on color
+            if color == 'r':
+                backward_state *= self.red_model
+            if color == 'g':
+                backward_state *= self.green_model
+            if color == 'b':
+                backward_state *= self.blue_model
+            if color == 'y':
+                backward_state *= self.yellow_model
+
+            backward_state = self.normalize(backward_state)
+            backward_sequence.append(np.flipud(backward_state))
+
+        # reverse the backward sequence to reflect timestep
+        backward_sequence.reverse()
+
+        # combine forward and backward through multiplication
+        smoothed = []
+        for i, state in enumerate(forward_sequence):
+            smooth = state * backward_sequence[i]  # multiply
+            smooth = self.normalize(smooth)  # normalize
+            smoothed.append(smooth)
+
+        return smoothed
 
     # creates an array of probabilities (each location equal at start)
     # NOTE: the array a mirror of the maze when printing use np.flipud

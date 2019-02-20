@@ -69,19 +69,22 @@ def test_HMM(maze, maze_colors, path):
     # HMM to generate distributions based on sensor readings
     hmm = HMM(maze, sensors[1:], maze_colors)
 
-    # generate path
-    distribution_path = hmm.compute_distributions()
+    # generate path of distributions
+    distribution_path = hmm.compute_distributions()  # filtering only
+    smooth_path = hmm.compute_distrib_smoothing()  # forward-backward smoothing
 
     # prints out the actual maze, the readings and colors, and the distribution
     # at each timestep
     for timestep, distrib in enumerate(distribution_path):
-        print('\ntime' + str(timestep) + '-----------')
-        print('square color: ' + actuals[timestep])
+        print('\ntime ' + str(timestep) + ' -----------')
+        print('square color: ' + actuals[timestep])  # compare sensor and actual
         print('sensor color: ' + sensors[timestep])
         print('robot location:')
-        print(locations[timestep])
+        print(locations[timestep])  # actual location (ground truth)
         print('distribution:')
-        print(distrib)
+        print(distrib)  # based on filtering
+        print('smoothed distribution:')
+        print(smooth_path[timestep])  # based on forward-backward smoothing
 
 
 # SOME TEST CODE:
