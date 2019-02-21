@@ -132,6 +132,10 @@ class HMM:
 
         return smoothed
 
+    # implements Viterbi algorithm to compute the most-likely path
+    def compute_mlpath(self):
+        pass
+
     # creates an array of probabilities (each location equal at start)
     # NOTE: the array a mirror of the maze when printing use np.flipud
     def get_start_state(self):
