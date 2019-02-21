@@ -83,7 +83,7 @@ def test_HMM(maze, maze_colors, path):
         print(locations[timestep])  # actual location (ground truth)
         print('distribution:')
         print(distrib)  # based on filtering
-        print('smoothed distribution:')
+        print('\nsmoothed distribution:')
         print(smooth_path[timestep])  # based on forward-backward smoothing
 
 
