@@ -134,13 +134,28 @@ class HMM:
 
     # implements Viterbi algorithm to compute the most-likely path
     def compute_mlpath(self):
-        pass
+
+        # initialize most likely path and score
+        most_likely_path = None
+        best_score = 0
+
+        # loop through possible final states finding paths to each one
+        for final_state in self.maze_colors:
+            path, score = self.ml_path_state(final_state)
+
+            # if this this the most likely path so far, update
+            if score > best_score:
+                best_score = score
+                most_likely_path = path
+
+        return most_likely_path
 
     # creates an array of probabilities (each location equal at start)
     # NOTE: the array a mirror of the maze when printing use np.flipud
     def get_start_state(self):
         start_state = np.zeros((self.maze.width, self.maze.height)) # empty
 
+        # loop through x and y locations adding floor spaces with uniform prob
         for x in range(self.maze.width):
             for y in range(self.maze.height):
 
@@ -148,6 +163,11 @@ class HMM:
                     start_state[y, x] = 1/len(self.maze_colors)
 
         return start_state
+
+    # helper function for self.compute_mlpath, generates most likely path from a
+    # given end state back to start based on readings (Viterbi algorithm)
+    def ml_path_state(final_state):
+        pass
 
     # genrates a probability matrix for each square based on sensor model
     # sensor model:
