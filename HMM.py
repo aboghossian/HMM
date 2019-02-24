@@ -4,6 +4,7 @@ import numpy as np
 
 
 # class that uses a Hidden Markov Model to solve a Mazeworld problem
+# has both filtering and smoothing functionality
 class HMM:
 
     def __init__(self, maze, sensor_readings, maze_colors):
@@ -35,7 +36,7 @@ class HMM:
     # sensor readings (colors)
     def compute_distributions(self):
         # initialize
-        state = self.start_state
+        state = self.get_start_state()
         sequence = [np.flipud(state)]  # add start state to state sequence
 
         # loop through readings
@@ -67,8 +68,8 @@ class HMM:
     # implements forward-backward algorithm to compute probability distribution
     def compute_distrib_smoothing(self):
         # both are initialized to uniform distributions
-        forward_state = self.start_state
-        backward_state = self.start_state
+        forward_state = self.get_start_state()
+        backward_state = self.get_start_state()
 
         # track the sequence starting at beginning and end
         forward_sequence = [np.flipud(forward_state)]
@@ -97,15 +98,9 @@ class HMM:
             forward_state = self.normalize(forward_state)
             forward_sequence.append(np.flipud(forward_state))
 
-        # loop backward through readings
+        # loop backward through readings, in backward implement sensor before
+        # transition
         for color in self.sensor_readings[::-1]:
-
-            # implement transition model (reshape to 1x16 for multiplication)
-            backward_state = np.reshape(backward_state, (1, 16))
-            backward_state = np.matmul(backward_state, self.transition_model)
-
-            # reshape back to 4x4
-            backward_state = np.reshape(backward_state, (self.maze.width, self.maze.height))
 
             # implement sensor model based on color
             if color == 'r':
@@ -116,6 +111,13 @@ class HMM:
                 backward_state *= self.blue_model
             if color == 'y':
                 backward_state *= self.yellow_model
+
+            # implement transition model (reshape to 1x16 for multiplication)
+            backward_state = np.reshape(backward_state, (1, 16))
+            backward_state = np.matmul(backward_state, self.transition_model)
+
+            # reshape back to 4x4
+            backward_state = np.reshape(backward_state, (self.maze.width, self.maze.height))
 
             backward_state = self.normalize(backward_state)
             backward_sequence.append(np.flipud(backward_state))
@@ -132,24 +134,6 @@ class HMM:
 
         return smoothed
 
-    # implements Viterbi algorithm to compute the most-likely path
-    def compute_mlpath(self):
-
-        # initialize most likely path and score
-        most_likely_path = None
-        best_score = 0
-
-        # loop through possible final states finding paths to each one
-        for final_state in self.maze_colors:
-            path, score = self.ml_path_state(final_state)
-
-            # if this this the most likely path so far, update
-            if score > best_score:
-                best_score = score
-                most_likely_path = path
-
-        return most_likely_path
-
     # creates an array of probabilities (each location equal at start)
     # NOTE: the array a mirror of the maze when printing use np.flipud
     def get_start_state(self):
@@ -163,11 +147,6 @@ class HMM:
                     start_state[y, x] = 1/len(self.maze_colors)
 
         return start_state
-
-    # helper function for self.compute_mlpath, generates most likely path from a
-    # given end state back to start based on readings (Viterbi algorithm)
-    def ml_path_state(final_state):
-        pass
 
     # genrates a probability matrix for each square based on sensor model
     # sensor model:

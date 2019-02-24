@@ -2,7 +2,7 @@
 # 2/17/19
 from HMM import HMM
 from Maze import Maze
-from random import choice, random
+import random
 
 
 # function to assign colors to floor spaces in a maze
@@ -14,7 +14,7 @@ def gen_random_colors(maze):
     for x in range(maze.width):
         for y in range(maze.height):
             if maze.is_floor(x, y):
-                maze_colors[(x, y)] = choice(possible_colors)
+                maze_colors[(x, y)] = random.choice(possible_colors)
     return maze_colors
 
 
@@ -31,13 +31,13 @@ def move_robot(maze, maze_colors, new_location):
     other_colors = [x for x in possible_colors if x != actual_color] # others
 
     # simulates sensor, 0.88 chance of corrrect color, 0.04 of others
-    if random() < 0.88:
+    if random.random() < 0.88:
         sensor = actual_color
-    elif random() < 0.92:
+    elif random.random() < 0.92:
         sensor = other_colors[0]
-    elif random() < 0.96:
+    elif random.random() < 0.96:
         sensor = other_colors[1]
-    elif random() <= 1:
+    elif random.random() <= 1:
         sensor = other_colors[2]
 
     return maze, actual_color, sensor
@@ -88,6 +88,8 @@ def test_HMM(maze, maze_colors, path):
 
 
 # SOME TEST CODE:
+# seed random for testing
+random.seed(1)
 
 # maze to test on
 maze = Maze('test_maze.maz')
